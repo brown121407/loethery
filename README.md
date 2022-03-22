@@ -1,0 +1,2 @@
+# loethery
+Ethereum lottery
