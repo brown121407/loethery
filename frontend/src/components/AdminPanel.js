@@ -1,9 +1,16 @@
+import { useState } from "react";
+import { startLottery, finishLottery } from "../util/interact";
+
 export default function() {
   // const currentRound = {
-  //   name: 'Test Round',
-  //   startDate: new Date(),
-  //   entryFee: 0.001
+  //   name: "",
+  //   startDate: "",
+  //   entryFee: 0
   // };
+
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+
   const currentRound = null;
 
   return (
@@ -22,21 +29,21 @@ export default function() {
                 <dt className="my-1">Entry fee:</dt>
                 <dd className="ml-4 my-1">{currentRound.entryFee} ETH</dd>
               </dl>
-              <button className="button dark:text-slate-50 my-2">End round</button>
+              <button onClick={finishLottery} className="button dark:text-slate-50 my-2">End round</button>
             </div>
           : <div>
               <form className="flex flex-col gap-4">
                 <div className="self-start flex flex-col gap-2">
                   <label>Name</label>
-                  <input type="text" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50"></input>
+                  <input type="text" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50" onChange={(event) => setName(event.target.value)}></input>
                 </div>
 
                 <div className="self-start flex flex-col gap-2">
                   <label>Entry fee</label>
-                  <input type="number" min="0" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50"></input>
+                  <input type="number" step = "0.01" min="0" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50" onChange={(event) => setPrice(event.target.value)} ></input>
                 </div>
 
-                <input type="submit" value="Start New Round" className="my-2 self-start button dark:text-slate-50"></input>
+                <input onClick={startLottery(price, name)} type="submit" value="Start New Round" className="my-2 self-start button dark:text-slate-50"></input>
               </form>
             </div>
           }
