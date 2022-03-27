@@ -52,7 +52,7 @@ contract Loethery is VRFConsumerBaseV2 {
         lotteryId = 0;
     }
 
-    function requestRandomWords() external onlyOwner {
+    function requestRandomWords() internal onlyOwner {
         // Will revert if subscription is not set and funded.
         s_requestId = COORDINATOR.requestRandomWords(
         keyHash,
@@ -73,11 +73,11 @@ contract Loethery is VRFConsumerBaseV2 {
     //Players buy their entry
     function buyEntry() public payable{
         require(!paused, "Lottery has ended.");
+        require(!isParticipating(msg.sender), "User is already registered");
         require(msg.value >= cost, "The amount sent is too low.");
         players.push(payable(msg.sender));
     }
 
-    // The admin sets the date
     function dateSet(uint256 _lotteryDate) public onlyOwner {
         lotteryHistory[lotteryId].lotteryDate = _lotteryDate;
         
@@ -99,8 +99,30 @@ contract Loethery is VRFConsumerBaseV2 {
         return address(this).balance;
     }
 
-    // The admin starts the lottery
+    function isParticipating(address _user) public view returns (bool) {
+        for(uint i = 0; i < players.length; i++){
+            if(players[i] == _user)
+                return true;
+        }
+
+        return false;
+    }
+
+    //To avoid drawing the same address for both winning spots, any winning one is removed from the players array
+    function remove(uint index) internal returns (address payable[] storage){
+        require(index < players.length, "Index provided is out of bounds.");
+        
+        for(uint i = index; i < players.length - 1; i++){
+            players[i] = players[i + 1];
+        }
+
+        players.pop();
+        return players;
+    }
+
+    //The random words required for drawing a winner are determined when the lottery starts.
     function startLottery(uint _cost, string memory _lotteryName, uint _lotteryDate) public onlyOwner {
+        requestRandomWords();
         dateSet(_lotteryDate);
         priceSet(_cost);
         nameSet(_lotteryName);
@@ -112,27 +134,34 @@ contract Loethery is VRFConsumerBaseV2 {
         return lotteryHistory[id];
     }
 
-    // Execution reverts, if I delete everything in the for loop it works, commenting any line gives an error when calling the function
     function finishLottery() public payable onlyOwner{
 
-        // requestRandomWords(); --> For the sake of retrieving the random values array with Remix I won't call the function here, as it would require it to be internal
         paused = true;
     
         for(uint i = 0; i < 2; i++){
             
+            // Winner is selected
             uint index = s_randomWords[i] % players.length;
             lotteryHistory[lotteryId].winners.push(players[index]);
+            
+            // remove(index); --> Execution reverts; will revise later
+
+            // Their respective payments are transfered to their addresses.
             (bool success, ) = players[index].call {value: address(this).balance * payments[i] / 100}("");
             require(success);
         }
 
         lotteryId++;
-        players = new address payable[](0); // resetting the array of players
+
+        // Resetting the array for the incoming lotteries.
+        players = new address payable[](0);
         
     }
 
     function withdraw() public payable onlyOwner {
-        payable(msg.sender).transfer(address(this).balance); // the rest is ours to take
+
+        // The rest is ours to take :)
+        payable(msg.sender).transfer(address(this).balance);
     }
 
     modifier onlyOwner() {

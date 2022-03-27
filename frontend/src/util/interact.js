@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
+import { formatEther } from 'ethers/lib/utils';
 import  contract  from '../contracts/Loethery.json';
-const contractAddress = "0x989A5ceDbAD8382Ac9a81198dF2151e6EbFaE2c7";
+const contractAddress = "0x8E6A4086e8806280fFCF7220af40D46811675773";
 const price = 0.01;
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -148,9 +149,10 @@ export const finishLottery = async() => {
 export const getPot = async() => {
     if(window.ethereum){
 
-        let txn = await connectedContract.getPotTotal();
-        console.log(txn);
-        return txn;
+        var txn = await connectedContract.getPotTotal();
+        const value = formatEther(txn);
+        console.log(value);
+        return value;
         
     }
   }
@@ -167,6 +169,18 @@ export const startLottery = async (cost, name) => {
     }
    
   }
+
+
+export const retrieveHistory = async (id) => {
+  if(window.ethereum){
+    
+    const txn = await connectedContract.retrieveLotteryHistory(id);
+    // Aici cu siguranta txn-u trebuie disecat in mai multe variabile folosind
+    // ceva functii de ethers.js
+    return txn;
+  
+  }
+}
 
 
 

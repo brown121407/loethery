@@ -6,12 +6,12 @@ export default function() {
   const [status, setStatus] = useState("");
   
   useEffect(async () => {
-    var { address, status } = await getCurrentWalletConnected();
+    const { address, status } = await getCurrentWalletConnected();
 
     setWallet(address);
     setStatus(status);
 
-    var { address, status } = await addWalletListener();
+    await addWalletListener();
   }, []);
 
   function addWalletListener() {

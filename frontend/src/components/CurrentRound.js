@@ -1,11 +1,13 @@
 import { entry } from "../util/interact";
+import { getPot } from "../util/interact";
 
 export default function() {
+  
   const currentRound = {
     name: "Round Title Here",
     startedAt: new Date(),
     entryFee: 0.001,
-    pot: 123
+    pot: 123,
   };
   // const currentRound = null;
 
