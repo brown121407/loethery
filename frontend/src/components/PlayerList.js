@@ -26,8 +26,8 @@ export default function() {
         <div className="mx-4 overflow-x-scroll">
           { addresses.length > 0
           ? <ul className="mt-4">
-              { addresses.map(address => 
-                  <li className="mb-2 font-mono" key={address}>{ address }</li>
+              { addresses.map((address, i) => 
+                  <li className="mb-2 font-mono" key={i}>{ address }</li>
                 )
               }
             </ul>

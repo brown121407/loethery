@@ -25,8 +25,8 @@ export default function() {
       <h2 className="text-3xl font-bold px-4 py-2 dark:text-slate-50">Past Rounds</h2>
       <div className="divide-y divide-dashed dark:divide-slate-600">
         { pastRounds.length > 0
-        ? pastRounds.map(round => 
-            <div className="px-4 py-2 overflow-x-auto">
+        ? pastRounds.map((round, i) => 
+            <div className="px-4 py-2 overflow-x-auto" key={i}>
               <h3 className="text-2xl dark:text-slate-50">{round.name}</h3>
               <dl>
                 <dt className="my-1">When:</dt>

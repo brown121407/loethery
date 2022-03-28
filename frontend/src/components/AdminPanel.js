@@ -43,7 +43,7 @@ export default function() {
                   <input type="number" step = "0.01" min="0" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50" onChange={(event) => setPrice(event.target.value)} ></input>
                 </div>
 
-                <input onClick={startLottery(price, name)} type="submit" value="Start New Round" className="my-2 self-start button dark:text-slate-50"></input>
+                <input onClick={() => startLottery(price, name)} type="submit" value="Start New Round" className="my-2 self-start button dark:text-slate-50"></input>
               </form>
             </div>
           }
