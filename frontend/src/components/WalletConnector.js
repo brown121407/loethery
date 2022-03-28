@@ -15,23 +15,20 @@ export default function() {
   }, []);
 
   function addWalletListener() {
-    
     if (window.ethereum) {
-        window.ethereum.on("accountsChanged", (accounts) => {
-        
+      window.ethereum.on("accountsChanged", (accounts) => {
         if (accounts.length > 0) {
           let chainId = window.ethereum.request({ method: 'eth_chainId' });
           
-        // String, hex code of the chainId of the Rinkebey test network
+          // String, hex code of the chainId of the Rinkebey test network
           const rinkebyChainId = "0x4"; 
           if (chainId !== rinkebyChainId) {
-          setStatus("You are not connected to the Rinkeby Test Network!");
-          setWallet("");
-        } else {
-          setWallet(accounts[0]);
-          setStatus("");
-        }
-          
+            setStatus("You are not connected to the Rinkeby Test Network!");
+            setWallet("");
+          } else {
+            setWallet(accounts[0]);
+            setStatus("");
+          }
         } else {
           setWallet("");
           setStatus("");

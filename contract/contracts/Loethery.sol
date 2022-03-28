@@ -62,11 +62,11 @@ contract Loethery is VRFConsumerBaseV2 {
     function requestRandomWords() internal onlyOwner {
         // Will revert if subscription is not set and funded.
         s_requestId = COORDINATOR.requestRandomWords(
-        keyHash,
-        s_subscriptionId,
-        requestConfirmations,
-        callbackGasLimit,
-        numWords
+            keyHash,
+            s_subscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
         );
     }
     
@@ -77,8 +77,8 @@ contract Loethery is VRFConsumerBaseV2 {
         s_randomWords = randomWords;
     }
 
-    //Players buy their entry
-    function buyEntry() public payable{
+    // Players buy their entry
+    function buyEntry() public payable {
         require(!paused, "Lottery has ended.");
         require(!isParticipating(msg.sender), "User is already registered");
         require(msg.value >= cost, "The amount sent is too low.");
@@ -98,14 +98,13 @@ contract Loethery is VRFConsumerBaseV2 {
         cost = _cost;
     }
 
-    function getPlayers() public view returns (address payable[] memory){
+    function getPlayers() public view returns (address payable[] memory) {
         return players;
     }
-
     
     function isParticipating(address _user) public view returns (bool) {
-        for(uint i = 0; i < players.length; i++){
-            if(players[i] == _user)
+        for (uint i = 0; i < players.length; i++) {
+            if (players[i] == _user)
                 return true;
         }
 
@@ -113,15 +112,14 @@ contract Loethery is VRFConsumerBaseV2 {
     }
 
     //To avoid drawing the same address for both winning spots, any winning one is removed from the players array
-    function remove(uint index) internal{
+    function remove(uint index) internal {
         require(index < players.length, "Index provided is out of bounds.");
         
-        for(uint i = index; i < players.length - 1; i++){
+        for (uint i = index; i < players.length - 1; i++) {
             players[i] = players[i + 1];
         }
 
         players.pop();
-        
     }
 
     //The random words required for drawing a winner are determined when the lottery starts.
@@ -139,12 +137,10 @@ contract Loethery is VRFConsumerBaseV2 {
         return lotteryHistory;
     }
 
-    function finishLottery() public payable onlyOwner{
-
+    function finishLottery() public payable onlyOwner {
         paused = true;
     
-        for(uint i = 0; i < 2; i++){
-            
+        for (uint i = 0; i < 2; i++) {
             // Winner is selected
             uint index = s_randomWords[i] % players.length;
             winners.push(players[index]);
@@ -162,17 +158,15 @@ contract Loethery is VRFConsumerBaseV2 {
 
         // Resetting the array for the incoming lotteries.
         players = new address payable[](0);
-        
     }
 
     function withdraw() public payable onlyOwner {
-
         // The rest is ours to take :)
         payable(msg.sender).transfer(address(this).balance);
     }
 
-    function isOwner() public view returns (bool){
-        if(msg.sender == s_owner)
+    function isOwner() public view returns (bool) {
+        if (msg.sender == s_owner)
             return true;
         return false;
     }
@@ -181,5 +175,4 @@ contract Loethery is VRFConsumerBaseV2 {
         require(msg.sender == s_owner);
         _;
     }
-
 }
