@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { formatEther } from 'ethers/lib/utils';
 import  contract  from '../contracts/Loethery.json';
-const contractAddress = "0x8E6A4086e8806280fFCF7220af40D46811675773";
+const contractAddress = "0xe4D8595dB4c3b6735f86Db0085e6Be2002B6923D";
 const price = 0.01;
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -157,6 +157,14 @@ export const getPot = async() => {
     }
   }
 
+export const getPlayers = async() => {
+  if(window.ethereum){
+    const txn = await connectedContract.getPlayers();
+    // Posibil sa returneze obiect si sa mai fie nevoie de cv functii din ethers.js
+    // pt a putea sa-i dai display
+    return txn;
+  }
+}
 
 export const startLottery = async (cost, name) => {
     if(window.ethereum){

@@ -30,16 +30,23 @@ contract Loethery is VRFConsumerBaseV2 {
 
     // Lottery details
     uint32 public lotteryId;
+
+    address[] winners;
+    string lotteryName;
+    uint256 lotteryDate;
+    uint256 pot;
+
     struct Lottery {
         address[] winners;
         string lotteryName;
         uint256 lotteryDate;
+        uint256 pot;
     }
 
-    mapping (uint => Lottery) public lotteryHistory;
+    Lottery[] public lotteryHistory;
     
     address payable[] public players;
-    uint256 cost = 0.01 ether;
+    uint256 cost;
     uint[] payments = [70, 25];
 
     bool paused = true;
@@ -75,30 +82,27 @@ contract Loethery is VRFConsumerBaseV2 {
         require(!paused, "Lottery has ended.");
         require(!isParticipating(msg.sender), "User is already registered");
         require(msg.value >= cost, "The amount sent is too low.");
+        pot += cost;
         players.push(payable(msg.sender));
     }
 
-    function dateSet(uint256 _lotteryDate) public onlyOwner {
-        lotteryHistory[lotteryId].lotteryDate = _lotteryDate;
-        
+    function dateSet(uint256 _lotteryDate) internal onlyOwner {
+        lotteryDate = _lotteryDate;
     }
 
-    function nameSet(string memory _name) public onlyOwner {
-        lotteryHistory[lotteryId].lotteryName = _name;
+    function nameSet(string memory _name) internal onlyOwner {
+        lotteryName = _name;
     }
 
     function priceSet(uint _cost) public onlyOwner {
-        cost = _cost * 0.01 ether;
+        cost = _cost;
     }
 
     function getPlayers() public view returns (address payable[] memory){
         return players;
     }
 
-    function getPotTotal() public view returns (uint256){
-        return address(this).balance;
-    }
-
+    
     function isParticipating(address _user) public view returns (bool) {
         for(uint i = 0; i < players.length; i++){
             if(players[i] == _user)
@@ -109,7 +113,7 @@ contract Loethery is VRFConsumerBaseV2 {
     }
 
     //To avoid drawing the same address for both winning spots, any winning one is removed from the players array
-    function remove(uint index) internal returns (address payable[] storage){
+    function remove(uint index) internal{
         require(index < players.length, "Index provided is out of bounds.");
         
         for(uint i = index; i < players.length - 1; i++){
@@ -117,7 +121,7 @@ contract Loethery is VRFConsumerBaseV2 {
         }
 
         players.pop();
-        return players;
+        
     }
 
     //The random words required for drawing a winner are determined when the lottery starts.
@@ -126,12 +130,13 @@ contract Loethery is VRFConsumerBaseV2 {
         dateSet(_lotteryDate);
         priceSet(_cost);
         nameSet(_lotteryName);
+        pot = 0 ether;
         paused = false;
     }
 
     // Lottery history with all respective dates.
-    function retrieveLotteryHistory(uint id) public view returns (Lottery memory) {
-        return lotteryHistory[id];
+    function retrieveLotteryHistory() public view returns (Lottery[] memory) {
+        return lotteryHistory;
     }
 
     function finishLottery() public payable onlyOwner{
@@ -142,14 +147,16 @@ contract Loethery is VRFConsumerBaseV2 {
             
             // Winner is selected
             uint index = s_randomWords[i] % players.length;
-            lotteryHistory[lotteryId].winners.push(players[index]);
+            winners.push(players[index]);
             
-            // remove(index); --> Execution reverts; will revise later
-
             // Their respective payments are transfered to their addresses.
             (bool success, ) = players[index].call {value: address(this).balance * payments[i] / 100}("");
             require(success);
+
+            remove(index);
         }
+
+        lotteryHistory.push(Lottery(winners, lotteryName, lotteryDate, pot));
 
         lotteryId++;
 
@@ -162,6 +169,12 @@ contract Loethery is VRFConsumerBaseV2 {
 
         // The rest is ours to take :)
         payable(msg.sender).transfer(address(this).balance);
+    }
+
+    function isOwner() public view returns (bool){
+        if(msg.sender == s_owner)
+            return true;
+        return false;
     }
 
     modifier onlyOwner() {
