@@ -4,7 +4,7 @@ import contract from './contracts/Loethery.json';
 
 export default class Loethery {
   constructor() {
-    const contractAddress = "0x61160432b1BB8BFBC3aeb2EAAF50d68D96a25502";
+    const contractAddress = "0x7418540481Cb0829FaF1F2d03A1FA18776ACD2fe";
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     this.contract = new ethers.Contract(contractAddress, contract.abi, signer);
