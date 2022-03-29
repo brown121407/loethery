@@ -1,41 +1,44 @@
-import { connectWallet, getCurrentWalletConnected } from "../util/interact";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { LoetheryContext } from "./LoetheryContext";
 
-export default function() {
+export default function(props) {
+  const loethery = useContext(LoetheryContext);
+
   const [walletAddress, setWallet] = useState("");
   const [status, setStatus] = useState("");
   
   useEffect(async () => {
-    const { address, status } = await getCurrentWalletConnected();
+    const { address, _ } = await loethery.getWallet();
 
     setWallet(address);
-    setStatus(status);
+
+    props.onChange();
 
     await addWalletListener();
   }, []);
 
   function addWalletListener() {
-    
     if (window.ethereum) {
-        window.ethereum.on("accountsChanged", (accounts) => {
-        
+      window.ethereum.on("accountsChanged", (accounts) => {
+        console.log('event fired');
         if (accounts.length > 0) {
           let chainId = window.ethereum.request({ method: 'eth_chainId' });
           
-        // String, hex code of the chainId of the Rinkebey test network
+          // String, hex code of the chainId of the Rinkeby test network
           const rinkebyChainId = "0x4"; 
           if (chainId !== rinkebyChainId) {
-          setStatus("You are not connected to the Rinkeby Test Network!");
-          setWallet("");
+            setStatus("You are not connected to the Rinkeby Test Network!");
+            setWallet("");
+          } else {
+            setWallet(accounts[0]);
+            setStatus("");
+          }
         } else {
-          setWallet(accounts[0]);
+          setWallet("");
           setStatus("");
         }
-          
-        } else {
-          setWallet("");
-          setStatus("");
-        }
+
+        props.onChange();
       });
     } else {
       setStatus(
@@ -52,7 +55,7 @@ export default function() {
   }
 
   const connectWalletPressed = async () => {
-    const walletResponse = await connectWallet();
+    const walletResponse = await loethery.connectWallet();
     setStatus(walletResponse.status);
     setWallet(walletResponse.address);
   };
@@ -60,7 +63,7 @@ export default function() {
   return (
     <div>
       <button onClick={connectWalletPressed} className="rounded-full font-bold dark:bg-slate-700 bg-white px-4 py-2 text-lg ring-1 dark:ring-slate-500 ring-slate-300 shadow-lg">
-      {walletAddress.length > 0 ? (
+      { walletAddress ? (
           "Connected: " +
           String(walletAddress).substring(0, 6) +
           "..." +

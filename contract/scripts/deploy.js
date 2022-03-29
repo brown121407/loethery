@@ -1,6 +1,6 @@
 const main = async () => {
     const ContractFactory = await hre.ethers.getContractFactory('Loethery');
-    const Contract = await ContractFactory.deploy(1949);
+    const Contract = await ContractFactory.deploy();
     await Contract.deployed();
     console.log("Contract deployed to:", Contract.address);
   };
