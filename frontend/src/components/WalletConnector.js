@@ -24,7 +24,7 @@ export default function(props) {
         if (accounts.length > 0) {
           let chainId = window.ethereum.request({ method: 'eth_chainId' });
           
-          // String, hex code of the chainId of the Rinkebey test network
+          // String, hex code of the chainId of the Rinkeby test network
           const rinkebyChainId = "0x4"; 
           if (chainId !== rinkebyChainId) {
             setStatus("You are not connected to the Rinkeby Test Network!");

@@ -71,7 +71,7 @@ export default function() {
 
                 <div className="self-start flex flex-col gap-2">
                   <label>Entry fee</label>
-                  <input type="number" step = "0.01" min="0" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50" onChange={(event) => setPrice(event.target.value)} ></input>
+                  <input type="number" step="0.000000001" min="0" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50" onChange={(event) => setPrice(event.target.value)} ></input>
                 </div>
 
                 <input type="submit" value="Start New Round" className="my-2 self-start button dark:text-slate-50"></input>

@@ -1,10 +1,10 @@
 import { ethers } from 'ethers';
-import { formatEther } from 'ethers/lib/utils';
+import { formatEther, parseEther } from 'ethers/lib/utils';
 import contract from './contracts/Loethery.json';
 
 export default class Loethery {
   constructor() {
-    const contractAddress = "0x871Ae0DAC50759357B97fcA2810bF8B281aB507B";
+    const contractAddress = "0xd78aCAf454c62b45Af32c7c14Ef730dfBe6051f3";
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     this.contract = new ethers.Contract(contractAddress, contract.abi, signer);
@@ -123,10 +123,9 @@ export default class Loethery {
 
   async getActiveRound() {
     const activeRound = await this.contract.getActiveRound();
-    console.log(activeRound.startDate);
     return {
       name: activeRound.name,
-      pot: activeRound.pot.toNumber(),
+      pot: formatEther(activeRound.pot),
       startDate: activeRound.startDate.toNumber(),
       price: await this.getPrice()
     };
@@ -151,7 +150,7 @@ export default class Loethery {
 
   async getPrice() {
     const price = await this.contract.getPrice();
-    return price.toNumber();
+    return formatEther(price);
   }
 
   async buyEntry() {
@@ -161,7 +160,7 @@ export default class Loethery {
 
   async startLottery(name, price) {
     let dateUnixTimestamp = Date.now();
-    console.log(price);
+    price = parseEther(price); // Convert Ether to Wei.
 
     return await this.contract.startLottery(price, name, dateUnixTimestamp);
   }
