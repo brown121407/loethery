@@ -1,15 +1,18 @@
-import { connectWallet, getCurrentWalletConnected } from "../util/interact";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { LoetheryContext } from "./LoetheryContext";
 
-export default function() {
+export default function(props) {
+  const loethery = useContext(LoetheryContext);
+
   const [walletAddress, setWallet] = useState("");
   const [status, setStatus] = useState("");
   
   useEffect(async () => {
-    const { address, status } = await getCurrentWalletConnected();
+    const { address, _ } = await loethery.getWallet();
 
     setWallet(address);
-    setStatus(status);
+
+    props.onChange();
 
     await addWalletListener();
   }, []);
@@ -17,6 +20,7 @@ export default function() {
   function addWalletListener() {
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
+        console.log('event fired');
         if (accounts.length > 0) {
           let chainId = window.ethereum.request({ method: 'eth_chainId' });
           
@@ -33,6 +37,8 @@ export default function() {
           setWallet("");
           setStatus("");
         }
+
+        props.onChange();
       });
     } else {
       setStatus(
@@ -49,7 +55,7 @@ export default function() {
   }
 
   const connectWalletPressed = async () => {
-    const walletResponse = await connectWallet();
+    const walletResponse = await loethery.connectWallet();
     setStatus(walletResponse.status);
     setWallet(walletResponse.address);
   };
@@ -57,7 +63,7 @@ export default function() {
   return (
     <div>
       <button onClick={connectWalletPressed} className="rounded-full font-bold dark:bg-slate-700 bg-white px-4 py-2 text-lg ring-1 dark:ring-slate-500 ring-slate-300 shadow-lg">
-      {walletAddress.length > 0 ? (
+      { walletAddress ? (
           "Connected: " +
           String(walletAddress).substring(0, 6) +
           "..." +

@@ -31,25 +31,20 @@ contract Loethery is VRFConsumerBaseV2 {
     // Lottery details
     uint32 public lotteryId;
 
-    address[] winners;
-    string lotteryName;
-    uint256 lotteryDate;
-    uint256 pot;
-
     struct Lottery {
         address[] winners;
-        string lotteryName;
-        uint256 lotteryDate;
+        string name;
+        uint256 startDate;
         uint256 pot;
     }
 
-    Lottery[] public lotteryHistory;
+    bool hasActiveRound = false;
+    Lottery activeRound;
+    Lottery[] public history;
     
     address payable[] public players;
-    uint256 cost;
+    uint256 price;
     uint[] payments = [70, 25];
-
-    bool paused = true;
 
     constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
         COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
@@ -77,29 +72,30 @@ contract Loethery is VRFConsumerBaseV2 {
         s_randomWords = randomWords;
     }
 
-    // Players buy their entry
     function buyEntry() public payable {
-        require(!paused, "Lottery has ended.");
+        require(hasActiveRound, "Lottery has ended.");
         require(!isParticipating(msg.sender), "User is already registered");
-        require(msg.value >= cost, "The amount sent is too low.");
-        pot += cost;
+        require(msg.value >= price, "The amount sent is too low.");
+        activeRound.pot += price;
         players.push(payable(msg.sender));
     }
 
-    function dateSet(uint256 _lotteryDate) internal onlyOwner {
-        lotteryDate = _lotteryDate;
+    function getPrice() public view returns (uint256) {
+        require(hasActiveRound, "No round currently active.");
+        return price;
     }
 
-    function nameSet(string memory _name) internal onlyOwner {
-        lotteryName = _name;
-    }
-
-    function priceSet(uint _cost) public onlyOwner {
-        cost = _cost;
+    function getActiveRound() public view returns (Lottery memory) {
+        require(hasActiveRound, "No round currently active.");
+        return activeRound;
     }
 
     function getPlayers() public view returns (address payable[] memory) {
         return players;
+    }
+
+    function getBalance() public view onlyOwner returns (uint)  {
+        return address(this).balance;
     }
     
     function isParticipating(address _user) public view returns (bool) {
@@ -111,7 +107,7 @@ contract Loethery is VRFConsumerBaseV2 {
         return false;
     }
 
-    //To avoid drawing the same address for both winning spots, any winning one is removed from the players array
+    // To avoid drawing the same address for both winning spots, any winning one is removed from the players array
     function remove(uint index) internal {
         require(index < players.length, "Index provided is out of bounds.");
         
@@ -122,37 +118,39 @@ contract Loethery is VRFConsumerBaseV2 {
         players.pop();
     }
 
-    //The random words required for drawing a winner are determined when the lottery starts.
-    function startLottery(uint _cost, string memory _lotteryName, uint _lotteryDate) public onlyOwner {
+    // The random words required for drawing a winner are determined when the lottery starts.
+    function startLottery(uint _price, string memory _name, uint _startDate) public onlyOwner {
+        require(!hasActiveRound, 'Another round is already running.');
+
         requestRandomWords();
-        dateSet(_lotteryDate);
-        priceSet(_cost);
-        nameSet(_lotteryName);
-        pot = 0 ether;
-        paused = false;
+        price = _price;
+        activeRound = Lottery(new address[](0), _name, _startDate, 0);
+        hasActiveRound = true;
     }
 
     // Lottery history with all respective dates.
-    function retrieveLotteryHistory() public view returns (Lottery[] memory) {
-        return lotteryHistory;
+    function getHistory() public view returns (Lottery[] memory) {
+        return history;
     }
 
     function finishLottery() public payable onlyOwner {
-        paused = true;
+        require(hasActiveRound, 'No round active.');
+
+        hasActiveRound = false;
     
         for (uint i = 0; i < 2; i++) {
             // Winner is selected
             uint index = s_randomWords[i] % players.length;
-            winners.push(players[index]);
+            activeRound.winners.push(players[index]);
             
             // Their respective payments are transfered to their addresses.
-            (bool success, ) = players[index].call {value: address(this).balance * payments[i] / 100}("");
+            (bool success, ) = players[index].call {value: activeRound.pot * payments[i] / 100}("");
             require(success);
 
             remove(index);
         }
 
-        lotteryHistory.push(Lottery(winners, lotteryName, lotteryDate, pot));
+        history.push(activeRound);
 
         lotteryId++;
 
@@ -162,6 +160,7 @@ contract Loethery is VRFConsumerBaseV2 {
 
     function withdraw() public payable onlyOwner {
         // The rest is ours to take :)
+        require(!hasActiveRound, "You can't take money out of the pot. Wait for the round to finish.");
         payable(msg.sender).transfer(address(this).balance);
     }
 

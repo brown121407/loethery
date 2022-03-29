@@ -1,31 +1,20 @@
+import { useContext, useEffect, useState } from "react";
+import { LoetheryContext } from "./LoetheryContext";
+
 export default function() {
-  const pastRounds = [
-    {
-      name: 'Super mega extragerea!!!',
-      startDate: new Date(),
-      endDate: new Date(),
-      winners: [
-        "0x19aCd555DB36BC7F8039d1022555cbB554750043",
-        "0x19aCd555DB36BC7F8039d1022555cbB554750044"
-      ]
-    },
-    {
-      name: 'Ceva extragere normala.',
-      startDate: new Date(),
-      endDate: new Date(),
-      winners: [
-        "0x19aCd555DB36BC7F8039d1022555cbB554750043",
-        "0x19aCd555DB36BC7F8039d1022555cbB554750044"
-      ]
-    }
-  ];
+  const loethery = useContext(LoetheryContext);
+  const [history, setHistory] = useState([]);
+  
+  useEffect(async () => {
+    setHistory(await loethery.getHistory());
+  }, []);
 
   return (
     <div className="card divide-y divide-solid dark:divide-slate-600">
       <h2 className="text-3xl font-bold px-4 py-2 dark:text-slate-50">Past Rounds</h2>
       <div className="divide-y divide-dashed dark:divide-slate-600">
-        { pastRounds.length > 0
-        ? pastRounds.map((round, i) => 
+        { history.length > 0
+        ? history.map((round, i) => 
             <div className="px-4 py-2 overflow-x-auto" key={i}>
               <h3 className="text-2xl dark:text-slate-50">{round.name}</h3>
               <dl>
