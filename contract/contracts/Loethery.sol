@@ -2,17 +2,41 @@
 
 pragma solidity ^0.8.7;
 
-contract Loethery {
-    address owner;
+import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
+
+contract Loethery is VRFConsumerBaseV2 {
+    // VRFConsumer standard parameters
+
+    VRFCoordinatorV2Interface COORDINATOR;
+    LinkTokenInterface LINKTOKEN;
+
+    uint64 s_subscriptionId;
+    address vrfCoordinator = 0x6168499c0cFfCaCD319c818142124B7A15E857ab;
+    address link = 0x01BE23585060835E02B77ef475b0Cc51aA1e0709;
+    bytes32 keyHash = 0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc;
+
+    uint32 callbackGasLimit = 100000;
+
+    uint16 requestConfirmations = 3;
+    uint32 numWords = 2;
+
+    uint256[] public s_randomWords;
+    uint256 public s_requestId;
+    address s_owner;
+       
+
+    // Lottery details
     uint32 public lotteryId;
 
     struct Lottery {
         address[] winners;
         string name;
         uint256 startDate;
-        uint256 endDate;
         uint256 pot;
+        uint256 endDate;
     }
 
     bool hasActiveRound = false;
@@ -23,17 +47,30 @@ contract Loethery {
     uint256 price;
     uint[] payments = [70, 25];
 
-    constructor() {
-        owner = msg.sender;
+    constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
+        COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
+        LINKTOKEN = LinkTokenInterface(link);
+        s_owner = msg.sender;
+        s_subscriptionId = subscriptionId;
         lotteryId = 0;
     }
 
-    function getRandomNumbers() internal view returns (uint[] memory numbers) {
-        uint base = uint(blockhash(block.number - 1));
-        numbers = new uint256[](2);
-        for (uint256 i = 0; i < 2; i++) {
-            numbers[i] = uint256(keccak256(abi.encode(base, i)));
-        }
+    function requestRandomWords() internal onlyOwner {
+        // Will revert if subscription is not set and funded.
+        s_requestId = COORDINATOR.requestRandomWords(
+            keyHash,
+            s_subscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
+        );
+    }
+    
+    function fulfillRandomWords(
+        uint256, /* requestId */
+        uint256[] memory randomWords
+    ) internal override {
+        s_randomWords = randomWords;
     }
 
     function buyEntry() public payable {
@@ -86,6 +123,7 @@ contract Loethery {
     function startLottery(uint _price, string memory _name, uint _startDate) public onlyOwner {
         require(!hasActiveRound, 'Another round is already running.');
 
+        requestRandomWords();
         price = _price;
         activeRound = Lottery(new address[](0), _name, _startDate, 0, 0);
         hasActiveRound = true;
@@ -97,15 +135,14 @@ contract Loethery {
     }
 
     function finishLottery() public payable onlyOwner {
+        require(players.length > 1, "There aren't enough players participating.");
         require(hasActiveRound, 'No round active.');
 
         hasActiveRound = false;
-
-        uint[] memory randomNumbers = getRandomNumbers();
-    
+                    
         for (uint i = 0; i < 2; i++) {
             // Winner is selected
-            uint index = randomNumbers[i] % players.length;
+            uint index = s_randomWords[i] % players.length;
             activeRound.winners.push(players[index]);
             
             // Their respective payments are transfered to their addresses.
@@ -131,13 +168,13 @@ contract Loethery {
     }
 
     function isOwner() public view returns (bool) {
-        if (msg.sender == owner)
+        if (msg.sender == s_owner)
             return true;
         return false;
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == s_owner);
         _;
     }
 }
