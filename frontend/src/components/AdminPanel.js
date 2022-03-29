@@ -1,46 +1,68 @@
-import { useContext, useState, useEffect } from "react";
-import toast from "react-hot-toast";
+import { useContext, useState } from "react";
+import handleError from "../utils/ErrorHandler";
 import { LoetheryContext } from "./LoetheryContext";
+import Spinner from "./Spinner";
 
-export default function() {
+export default function(props) {
   const loethery = useContext(LoetheryContext);
+  const activeRound = props.activeRound;
+  const balance = props.balance;
+  const isLoading = props.isLoading;
+  const setIsLoading = props.setIsLoading;
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState(0);
-  const [activeRound, setActiveRound] = useState();
-  const [balance, setBalance] = useState(0);
 
-  useEffect(async () => {
-    try {
-      setBalance(await loethery.getBalance());
-      setActiveRound(await loethery.getActiveRound());
-    } catch (err) {
-      console.error(err);
-      setActiveRound(null);
-    }
-  }, []);
-
-  const submit = (event) => {
+  const startLottery = async (event) => {
     event.preventDefault();
 
-    loethery.startLottery(name, price);
+    try {
+      setIsLoading(true);
+
+      const txn = await loethery.startLottery(name, price);
+      await txn.wait();
+
+      setIsLoading(false);
+
+      props.onChange();
+    } catch(err) {
+      handleError(err);
+
+      setIsLoading(false);
+    }
   };
 
   const finishLottery = async () => {
     try {
-      await loethery.finishLottery();
+      setIsLoading(true);
+
+      const txn = await loethery.finishLottery();
+      await txn.wait();
+
+      setIsLoading(false);
+
+      props.onChange();
     } catch (err) {
-      console.error(err);
-      toast.error(err.error.message);
+      handleError(err);
+
+      setIsLoading(false);
     }
   }
 
   const withdraw = async () => {
     try {
-      await loethery.withdraw();
+      setIsLoading(true);
+
+      const txn = await loethery.withdraw();
+      await txn.wait();
+
+      setIsLoading(false);
+
+      props.onChange();
     } catch (err) {
-      console.error(err);
-      toast.error(err.error.message);
+      handleError(err);
+
+      setIsLoading(false);
     }
   }
 
@@ -56,14 +78,17 @@ export default function() {
                 <dt className="my-1">Name:</dt>
                 <dd className="ml-4 my-1">{activeRound.name}</dd>
                 <dt className="my-1">Started at:</dt>
-                <dd className="ml-4 my-1">{new Date(activeRound.startDate).toLocaleString()}</dd>
+                <dd className="ml-4 my-1">{ activeRound.startDate.toLocaleString() }</dd>
                 <dt className="my-1">Entry fee:</dt>
                 <dd className="ml-4 my-1">{activeRound.price} ETH</dd>
               </dl>
-              <button onClick={finishLottery} className="button dark:text-slate-50 my-2">End round</button>
+              <button onClick={finishLottery} disabled={isLoading} className="inline-flex items-center button dark:text-slate-50 my-2">
+                { isLoading && <Spinner/> }
+                End round
+              </button>
             </div>
           : <div>
-              <form className="flex flex-col gap-4" onSubmit={submit}>
+              <form className="flex flex-col gap-4" onSubmit={startLottery}>
                 <div className="self-start flex flex-col gap-2">
                   <label>Name</label>
                   <input type="text" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50" onChange={(event) => setName(event.target.value)}></input>
@@ -74,7 +99,10 @@ export default function() {
                   <input type="number" step="0.000000001" min="0" className="px-2 py-1 dark:bg-slate-700 ring-1 dark:ring-slate-500 rounded dark:text-slate-50" onChange={(event) => setPrice(event.target.value)} ></input>
                 </div>
 
-                <input type="submit" value="Start New Round" className="my-2 self-start button dark:text-slate-50"></input>
+                <button type="submit" disabled={isLoading} className="inline-flex items-center my-2 self-start button dark:text-slate-50">
+                  { isLoading && <Spinner/> }
+                  Start New Round
+                </button>
               </form>
             </div>
           }
@@ -84,7 +112,10 @@ export default function() {
           <h3 className="text-2xl my-2 dark:text-slate-100">Lottery balance</h3>
           <div>
             <p className="my-2">{ balance } ETH</p>
-            <button onClick={withdraw} className="button dark:text-slate-50 my-2">Withdraw funds</button>
+            <button onClick={withdraw} disabled={isLoading} className="inline-flex items-center button dark:text-slate-50 my-2">
+              { isLoading && <Spinner/> }
+              Withdraw funds
+            </button>
           </div>
         </div>
       </div>

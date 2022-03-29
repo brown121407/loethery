@@ -1,13 +1,6 @@
-import { useContext, useEffect, useState } from "react";
-import { LoetheryContext } from "./LoetheryContext";
-
-export default function() {
-  const loethery = useContext(LoetheryContext);
-  const [history, setHistory] = useState([]);
-  
-  useEffect(async () => {
-    setHistory(await loethery.getHistory());
-  }, []);
+export default function(props) {
+  const history = props.history;
+  history.sort((round1, round2) => round2.endDate - round1.endDate);
 
   return (
     <div className="card divide-y divide-solid dark:divide-slate-600">
@@ -23,7 +16,7 @@ export default function() {
                 <dt className="my-1">1<sup>st</sup> pick:</dt>
                 <dd className="font-mono ml-4">{round.winners[0]}</dd>
                 <dt className="my-1">2<sup>nd</sup> pick:</dt>
-                <dd className="font-mono ml-4">{round.winners[0]}</dd>
+                <dd className="font-mono ml-4">{round.winners[1]}</dd>
               </dl>
             </div> 
           )

@@ -13,14 +13,45 @@ import { Toaster } from 'react-hot-toast';
 export default function() {
   const loethery = new Loethery();
 
-  const [isOwner, setIsOwner] = useState();
+  const [isOwner, setIsOwner] = useState(false);
+  const [activeRound, setActiveRound] = useState();
+  const [players, setPlayers] = useState([]);
+  const [balance, setBalance] = useState();
+  const [history, setHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    refreshOwnerStatus();
-  });
+  useEffect(async () => {
+    await refreshOwnerStatus();
+    await updateLotteryState();
+  }, []);
+
+  useEffect(async () => {
+    if (isOwner) {
+      setBalance(await loethery.getBalance());
+    }
+  }, [isOwner])
 
   const refreshOwnerStatus = async () => {
     setIsOwner(await loethery.isOwner());
+  }
+
+  const updateLotteryState = async () => {
+    setIsLoading(true);
+    try {
+      setActiveRound(await loethery.getActiveRound());
+    } catch (err) {
+      console.error(err);
+      setActiveRound(null);
+    }
+
+    setPlayers(await loethery.getPlayers());
+    setHistory(await loethery.getHistory());
+
+    if (isOwner) {
+      setBalance(await loethery.getBalance());
+    }
+
+    setIsLoading(false);
   }
 
   return (
@@ -43,12 +74,12 @@ export default function() {
           { loethery.hasWalledConnected()
           ? <div>
               <div className="flex flex-col md:flex-row md:flex-nowrap gap-8">
-                <ActiveRound/>
-                <PlayerList/>
+                <ActiveRound isLoading={isLoading} setIsLoading={setIsLoading} activeRound={activeRound} onChange={updateLotteryState} />
+                <PlayerList players={players}/>
               </div>
 
-              { isOwner && <AdminPanel/> }
-              <History/>
+              { isOwner && <AdminPanel isLoading={isLoading} setIsLoading={setIsLoading} activeRound={activeRound} balance={balance} onChange={updateLotteryState} /> }
+              <History history={history} />
             </div>
           :  <p className="my-8 font-bold text-xl">Please connect your wallet.</p>
           }

@@ -4,7 +4,7 @@ import contract from './contracts/Loethery.json';
 
 export default class Loethery {
   constructor() {
-    const contractAddress = "0xd78aCAf454c62b45Af32c7c14Ef730dfBe6051f3";
+    const contractAddress = "0x61160432b1BB8BFBC3aeb2EAAF50d68D96a25502";
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     this.contract = new ethers.Contract(contractAddress, contract.abi, signer);
@@ -126,7 +126,7 @@ export default class Loethery {
     return {
       name: activeRound.name,
       pot: formatEther(activeRound.pot),
-      startDate: activeRound.startDate.toNumber(),
+      startDate: new Date(activeRound.startDate.toNumber() * 1000),
       price: await this.getPrice()
     };
   }
@@ -140,7 +140,16 @@ export default class Loethery {
   }
 
   async getHistory() {
-    return await this.contract.getHistory();
+    let history = await this.contract.getHistory();
+    history = history.map((round) => {
+      return {
+        name: round.name,
+        startDate: new Date(round.startDate.toNumber() * 1000),
+        endDate: new Date(round.endDate.toNumber() * 1000),
+        winners: round.winners
+      }
+    });
+    return history;
   }
 
   async getBalance() {
@@ -155,21 +164,21 @@ export default class Loethery {
 
   async buyEntry() {
     const entryPrice = await this.contract.getPrice();
-    await this.contract.buyEntry({value: entryPrice});
+    return await this.contract.buyEntry({value: entryPrice});
   }
 
   async startLottery(name, price) {
-    let dateUnixTimestamp = Date.now();
+    let dateUnixTimestamp = Math.floor(Date.now() / 1000);
     price = parseEther(price); // Convert Ether to Wei.
 
     return await this.contract.startLottery(price, name, dateUnixTimestamp);
   }
 
   async finishLottery() {
-    await this.contract.finishLottery();
+    return await this.contract.finishLottery();
   }
 
   async withdraw() {
-    await this.contract.withdraw();
+    return await this.contract.withdraw();
   }
 }

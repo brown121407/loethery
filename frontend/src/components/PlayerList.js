@@ -1,14 +1,5 @@
-import { useContext, useEffect, useState } from "react";
-import { LoetheryContext } from "./LoetheryContext";
-
-export default function() {
-  const loethery = useContext(LoetheryContext);
-
-  const [addresses, setAddresses] = useState([]);
-
-  useEffect(async () => {
-    setAddresses(await loethery.getPlayers());
-  }, []);
+export default function(props) {
+  const addresses = props.players;
 
   return (
     <div className="card grow md:w-1/2 overflow-y-scroll divide-y divide-solid dark:divide-slate-600 max-h-[70vh] md:max-h-[50vh]">
